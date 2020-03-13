@@ -197,6 +197,7 @@ class TrainingScene extends util.Entity {
     document.getElementById("training-gui").style.display = "block";
     document.getElementById("done-training-1").addEventListener("click", this.onDonePart1.bind(this));
     document.getElementById("done-training-2").addEventListener("click", this.onDonePart2.bind(this));
+    document.getElementById("done-training-3").addEventListener("click", this.onDonePart3.bind(this));
     document.getElementById("done-training-4").addEventListener("click", e => {
       this.done = true;
 
@@ -241,6 +242,13 @@ class TrainingScene extends util.Entity {
 
     document.getElementById("add-shape").style.display = "block";
     this.blockScene.preventAddingShape = false;
+  }
+
+  onDonePart3() {
+    document.getElementById("training-4").style.display = "none";
+    document.getElementById("training-5").style.display = "block";
+    this.blockScene.teardown()
+    this.blockScene.setup()
   }
 
   onAddedShape() {
@@ -867,11 +875,11 @@ ws.onopen = () => {
 ws.onerror = (error) => {
   console.error("Error communicating on WebSocket", error);
 };
-
+ 
 // Resize
 util.resizeGame(app);
 window.addEventListener("resize", () => util.resizeGame(app));
-
+ 
 // // Debugging code
 // for(let i = 0; i < 120; i++) {
 //   galleryShapes.push([{"x":1,"y":0},{"x":2,"y":0},{"x":3,"y":0},{"x":4,"y":0},{"x":5,"y":0},{"x":6,"y":0},{"x":7,"y":0},{"x":8,"y":0},{"x":9,"y":0},{"x":1,"y":-1}]);
