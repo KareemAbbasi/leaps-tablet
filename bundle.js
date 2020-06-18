@@ -9103,8 +9103,7 @@ var BlockScene = function (_util$Entity3) {
       this.updateGalleryShape(galleryShape);
 
       document.getElementById("end-early-message").style.display = "none";
-      document.getElementById("add-shape").disabled = true;
-      this.changedShape = false;
+      document.getElementById("add-shape").disabled = true;this.changedShape = false;
 
       redmetricsConnection.postEvent({
         type: "added shape to gallery",
@@ -9119,6 +9118,7 @@ var BlockScene = function (_util$Entity3) {
   }, {
     key: "onAttemptDone",
     value: function onAttemptDone() {
+      console.log(allowEarlyExit);
       if (this.timesUp || !allowEarlyExit) {
         this.confirmDone();
       } else if (galleryShapes.length < 5) {
@@ -9476,7 +9476,9 @@ var metricsStartSceneEvents = {
 };
 
 var searchParams = new URLSearchParams(window.location.search);
-var allowEarlyExit = searchParams.get("allowEarlyExit") !== "false" && searchParams.get("allowEarlyExit") !== "0";
+// Change the default to not allow early exit.
+var allowEarlyExit = searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1" ? true : false;
+
 var showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
 
 var galleryShapes = [];
