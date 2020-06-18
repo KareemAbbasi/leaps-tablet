@@ -569,8 +569,7 @@ class BlockScene extends util.Entity {
     this.updateGalleryShape(galleryShape);
 
     document.getElementById("end-early-message").style.display = "none";
-    document.getElementById("add-shape").disabled = true;
-    this.changedShape = false;
+    document.getElementById("add-shape").disabled = true;    this.changedShape = false;
 
     redmetricsConnection.postEvent({
       type: "added shape to gallery",
@@ -584,6 +583,7 @@ class BlockScene extends util.Entity {
   }
 
   onAttemptDone() {
+    console.log(allowEarlyExit)
     if(this.timesUp || !allowEarlyExit) {
       this.confirmDone();
     } else if(galleryShapes.length < 5) { 
@@ -830,7 +830,9 @@ const metricsStartSceneEvents = {
 };
 
 const searchParams = new URLSearchParams(window.location.search);
-const allowEarlyExit = searchParams.get("allowEarlyExit") !== "false" && searchParams.get("allowEarlyExit") !== "0";
+// Change the default to not allow early exit.
+const allowEarlyExit = (searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1") ? true : false;
+
 const showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
 
 let galleryShapes = [];
