@@ -9479,7 +9479,7 @@ var searchParams = new URLSearchParams(window.location.search);
 // Change the default to not allow early exit.
 var allowEarlyExit = searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1" ? true : false;
 
-var showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
+var showResults = searchParams.get("showResults") == "true" || searchParams.get("showResults") == "1" ? true : false;
 
 var galleryShapes = [];
 var searchScore = 0.33;
