@@ -833,7 +833,7 @@ const searchParams = new URLSearchParams(window.location.search);
 // Change the default to not allow early exit.
 const allowEarlyExit = (searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1") ? true : false;
 
-const showResults = searchParams.get("showResults") !== "false" && searchParams.get("showResults") !== "0";
+const showResults = (searchParams.get("showResults") == "true" || searchParams.get("showResults") == "1") ? true : false;
 
 let galleryShapes = [];
 let searchScore = 0.33;
