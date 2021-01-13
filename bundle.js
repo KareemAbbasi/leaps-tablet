@@ -8373,6 +8373,8 @@ var DRAG_HIGHLIGHT_PERIOD = 500;
 var RED_METRICS_HOST = "api.creativeforagingtask.com";
 var RED_METRICS_GAME_VERSION = "dff09f30-f1ca-406a-aff0-7eff70f2563d";
 
+var inTraining = true;
+
 var TRIGGERS = {
   "loadGame": 100, // When loads starts
   "startGame": 3, // When pressing the button "let's play" - (A "start game" trigger)
@@ -8588,7 +8590,8 @@ var TrainingScene = function (_util$Entity2) {
       document.getElementById("after-saving").addEventListener("click", this.onSavingFirstTime.bind(this));
       document.getElementById("done-training-3").addEventListener("click", function (e) {
         _this3.done = true;
-
+        inTraining = false;
+        sceneStartedAt = Date.now();
         sendTrigger("startGame");
       });
     }
@@ -8753,6 +8756,7 @@ var BlockScene = function (_util$Entity3) {
       if (this.timesUp) return;
 
       if (timeSinceStart > MAX_SEARCH_TIME) {
+        if (inTraining) return;
         this.timesUp = true;
 
         document.getElementById("add-shape").disabled = true;
@@ -9480,6 +9484,11 @@ var searchParams = new URLSearchParams(window.location.search);
 var allowEarlyExit = searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1" ? true : false;
 
 var showResults = searchParams.get("showResults") == "true" || searchParams.get("showResults") == "1" ? true : false;
+var timerValue = searchParams.get("length");
+if (timerValue != null) {
+  MAX_SEARCH_TIME = parseInt(timerValue) * 60 * 1000;
+  document.getElementById("game-length-sentence").innerHTML = "\u05D0\u05D5\u05E8\u05DA \u05D4\u05DE\u05E9\u05D7\u05E7 \u05DB- " + parseInt(timerValue) + " \u05D3\u05E7\u05D5\u05EA.";
+}
 
 var galleryShapes = [];
 var searchScore = 0.33;
