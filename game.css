@@ -1,6 +1,7 @@
-* {
+/* FIXME LANGUAGE DIFF */
+/* * {
   direction: rtl;
-}
+} */
 
 body {
   margin: 0;
@@ -106,6 +107,14 @@ a {
   font-size: 2em;
 }
 
+#square-countdown {
+  position: absolute;
+  top: 0px;
+  left: 70px;
+  font-size: 1.2em;
+}
+
+
 #html-layer input, 
 #html-layer button, 
 #html-layer label, 
@@ -181,7 +190,8 @@ a {
   color: white;
 }
 
-#modal-confirm-done {
+#modal-confirm-done,
+#square-timeout-modal {
   position: absolute;
   top: 0;
   left: 0;
@@ -191,7 +201,8 @@ a {
   pointer-events: all;
 }
 
-#modal-confirm-box {
+#modal-confirm-box,
+#square-timeout-box {
   position: absolute;
   width: 320px;
   height: 110px;
@@ -202,7 +213,8 @@ a {
   background-color: white;
 }
 
-#modal-confirm-box p {
+#modal-confirm-box p,
+#square-timeout-box p {
   color: black;
 }
 

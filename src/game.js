@@ -5,13 +5,14 @@ import "../node_modules/url-search-params-polyfill/index.js";
 
 const EPSILON = 0.001;
 const BLOCK_WIDTH = 50;
-const MAX_SEARCH_TIME = 12 * 60 * 1000;
+var MAX_SEARCH_TIME = 12 * 60 * 1000;
 const BLOCK_COLOR = 0x81e700;
 const HIGHLIGHTED_BLOCK_COLOR = 0x59853b;
 const DRAG_HIGHLIGHT_PERIOD = 500;
 const RED_METRICS_HOST = "api.creativeforagingtask.com";
 const RED_METRICS_GAME_VERSION = "dff09f30-f1ca-406a-aff0-7eff70f2563d";
 
+var inTraining = true;
 
 const TRIGGERS = {
   "loadGame": 100, // When loads starts
@@ -185,11 +186,12 @@ class TrainingScene extends util.Entity {
     this.didDropBlock = false;
 
     this.blockScene = new BlockScene(true);
-    this.blockScene.setup();
+    this.blockScene.setup(true);
 
     this.blockScene.preventAddingShape = true;
     document.getElementById("add-shape").style.display = "none";
     document.getElementById("done-adding").style.display = "none";
+    // document.getElementById("square-countdown").style.display = "none";
 
     this.blockScene.on("droppedBlock", this.onDroppedBlock, this);
     this.blockScene.on("addedShape", this.onAddedShape, this);
@@ -201,7 +203,8 @@ class TrainingScene extends util.Entity {
     document.getElementById("after-saving").addEventListener("click", this.onSavingFirstTime.bind(this));
     document.getElementById("done-training-3").addEventListener("click", e => {
       this.done = true;
-
+      inTraining = false;
+      sceneStartedAt = Date.now();
       sendTrigger("startGame");
     });
   }
@@ -255,7 +258,7 @@ class TrainingScene extends util.Entity {
     document.getElementById("training-3").style.display = "none";
     document.getElementById("training-5").style.display = "block";
     this.blockScene.teardown()
-    this.blockScene.setup()
+    this.blockScene.setup(true)
     this.blockScene.off("addedShape", this.onAddedShape, this);
   }
 
@@ -267,7 +270,8 @@ class TrainingScene extends util.Entity {
 
 
 class BlockScene extends util.Entity {
-  setup() {
+  setup(isTraining) {
+    this.isTraining = isTraining;
     this.done = false;
     this.draggingBlock = null;
     this.draggingBlockStartGridPosition = null;
@@ -325,6 +329,7 @@ class BlockScene extends util.Entity {
 
     // HTML
     document.getElementById("blocks-gui").style.display = "block";
+    
 
     // This is dumb, but required so that removeEventListener works correctly with bind()
     this.onAddShape = this.onAddShape.bind(this);
@@ -339,13 +344,85 @@ class BlockScene extends util.Entity {
     const doneAddingButton = document.getElementById("done-adding");
     doneAddingButton.addEventListener("click", this.onAttemptDone);
     doneAddingButton.disabled = !allowEarlyExit;
+
+    // Timer for picking up squares
+    if (!this.isTraining) {
+      // document.getElementById("square-countdown").style.display = "block";
+      this.startSquaresCountdown();
+    }
+    document.getElementById("square-timeout-done-button").addEventListener("click", this.squareTimeoutOkButton);
+  }
+  /**
+   * Starts countdown when the player is choosing a block. (Called after dropping a square)
+   */
+  startSquaresCountdown() {
+    if (!this.isTraining) {
+      var squareCountdownValue = 60;
+      var self = this;
+      window.squareCountdown = setInterval(function() {
+        squareCountdownValue--;
+        if (squareCountdownValue > 0) {
+          document.getElementById("square-countdown").innerHTML = squareCountdownValue.toString();
+        } else {
+          clearInterval(window.squareCountdown);
+          document.getElementById("square-countdown").innerHTML = "10";
+          document.getElementById("square-timeout-modal").style.display = "block";
+          self.startSecondTimer();
+          
+        }
+      }, 1000);
+    }
+  }
+  
+  /**
+   * Stops the countdown timer between choosing squares. (Called after choosing a square)
+   */
+  stopSquaresCountdown() {
+    if (!this.isTraining) {
+      clearInterval(window.squareCountdown);
+      document.getElementById("square-countdown").innerHTML = "60";
+    }
+  }
+
+  squareTimeoutOkButton() {
+    document.getElementById("square-timeout-modal").style.display = "none";
+  }
+
+  /**
+   * This starts the 10 seconds timer that is after the 60 seconds timer for choosing blocks.
+   */
+  startSecondTimer() {
+    if (!this.isTraining) {
+      clearInterval(window.squareCountdown);
+      var squareCountdownValue = 10;
+      var self = this;
+      window.squareCountdown = setInterval(function() {
+        squareCountdownValue--;
+        if (squareCountdownValue > 0) {
+          document.getElementById("square-countdown").innerHTML = squareCountdownValue.toString();
+        } else {
+          clearInterval(window.squareCountdown);
+          document.getElementById("square-timeout-modal").style.display = "none";
+          self.disableBlocks();
+          this.timesUp = true;
+          document.getElementById("add-shape").disabled = true;
+          if(galleryShapes.length < 5) {
+            document.getElementById("stuck-message").style.display = "block";
+            document.getElementById("done-adding").disabled = true;
+          } else {
+            document.getElementById("continue-message").style.display = "block";
+            document.getElementById("done-adding").disabled = false;
+          }
+        }
+      }, 1000);
+    }
   }
 
   update(timeSinceStart) {
     if(this.timesUp) return;
 
-
     if(timeSinceStart > MAX_SEARCH_TIME) {
+      if (inTraining) return;
       this.timesUp = true;
 
       document.getElementById("add-shape").disabled = true;
@@ -424,6 +501,9 @@ class BlockScene extends util.Entity {
 
     // Disable html buttons
     document.getElementById("html-layer").className = "no-pointer-events";
+
+    // Stop the current squares countdown.
+    this.stopSquaresCountdown();
   }
 
   onPointerUp(e) {
@@ -444,6 +524,9 @@ class BlockScene extends util.Entity {
     document.getElementById("html-layer").className = "";
 
     this.emit("droppedBlock");
+
+    // Start the squares countdown
+    this.startSquaresCountdown();
   }
 
   onPointerMove(e) {
@@ -475,6 +558,12 @@ class BlockScene extends util.Entity {
       } else {
         blockGraphic.interactive = false;
       }
+    }
+  }
+
+  disableBlocks() {
+    for(const blockGraphic of this.blocksContainer.children) {
+      blockGraphic.interactive = false;
     }
   }
 
@@ -564,12 +653,14 @@ class BlockScene extends util.Entity {
 
     sendTrigger("collectShape");
 
+    this.stopSquaresCountdown();
     const galleryShape = util.cloneData(this.blockGrid)
     galleryShapes.push(galleryShape);
     this.updateGalleryShape(galleryShape);
 
     document.getElementById("end-early-message").style.display = "none";
-    document.getElementById("add-shape").disabled = true;    this.changedShape = false;
+    document.getElementById("add-shape").disabled = true;    
+    this.changedShape = false;
 
     redmetricsConnection.postEvent({
       type: "added shape to gallery",
@@ -578,12 +669,11 @@ class BlockScene extends util.Entity {
         timeSinceLastMouseUp: Date.now() - this.lastMouseUpTime
       }
     });
-
+    this.startSquaresCountdown();
     this.emit("addedShape");
   }
 
   onAttemptDone() {
-    console.log(allowEarlyExit)
     if(this.timesUp || !allowEarlyExit) {
       this.confirmDone();
     } else if(galleryShapes.length < 5) { 
@@ -797,6 +887,17 @@ class ResultsScene extends util.Entity {
         document.getElementById("followup-link-container").style.display = "none";
       }
     }
+
+    // Redirecting to a link after the experiment. This is different from the one above
+    // because it doensn't have the parameters. 
+    // TODO delete one of them.
+    if (searchParams.has("urlNextLink")) {
+      var link = searchParams.get("urlNextLink");
+      if (!_.contains(link, "http://")) {
+        link = "http://" + link;
+      }
+      window.location.replace(link);
+    }
   }
 
   teardown() {
@@ -834,6 +935,14 @@ const searchParams = new URLSearchParams(window.location.search);
 const allowEarlyExit = (searchParams.get("allowEarlyExit") == "true" || searchParams.get("allowEarlyExit") == "1") ? true : false;
 
 const showResults = (searchParams.get("showResults") == "true" || searchParams.get("showResults") == "1") ? true : false;
+const timerValue = searchParams.get("length");
+if (timerValue != null) {
+  MAX_SEARCH_TIME = parseInt(timerValue) * 60 * 1000;
+  //FIXME LANGUAGE DIFF
+  // document.getElementById("game-length-sentence").innerHTML = `אורך המשחק כ- ${parseInt(timerValue)} דקות.`
+  document.getElementById("game-length-sentence").innerHTML = `The game is ${parseInt(timerValue)} minutes long.`
+}
+
 
 let galleryShapes = [];
 let searchScore = 0.33;
